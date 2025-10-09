@@ -4,6 +4,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from sklearn.preprocessing import LabelEncoder
+import os
 
 # Set page config
 st.set_page_config(layout="wide", page_title="Food Delivery Time Prediction Dashboard")
@@ -15,9 +16,11 @@ st.write("An interactive dashboard for Initial Data Analysis (IDA) and Explorato
 # --- Data Loading ---
 @st.cache_data
 def load_data():
-    """Loads the dataset from a local CSV file."""
+    """Loads the dataset from a local CSV file using a relative path."""
     try:
-        df = pd.read_csv(r"C:\Users\USER\Desktop\MSU related\Courses Sem 1\CMSE 830\Project\data\Food_Delivery_Times.csv")
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        data_path = os.path.join(script_dir, "data", "Food_Delivery_Times.csv")
+        df = pd.read_csv(data_path)
         return df
     except Exception as e:
         st.error(f"Error loading data: {e}")
