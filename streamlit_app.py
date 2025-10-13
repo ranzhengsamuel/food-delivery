@@ -12,8 +12,8 @@ import numpy as np
 st.set_page_config(layout="wide", page_title="Food Delivery Analysis Dashboard")
 
 # Title and description
-st.title("Interactive Food Delivery Analysis")
-st.write("An interactive dashboard for Exploratory Data Analysis (EDA) of food delivery datasets.")
+st.title("What affects food delivery time?")
+st.write("People nowadays order more and more takeouts. Of course, we all want the order to arrive ASAP. But what really affects the time of delivery? Is it weather? Is it distance? Is it the quality of the restaurant? Let's find out!")
 
 # --- Data Loading ---
 @st.cache_data
