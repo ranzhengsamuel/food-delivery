@@ -4,7 +4,7 @@
 # In[1]:
 
 
-import pandas as pd
+import numpy as np
 import streamlit as st
 
 # This is the dataset, 2 of them, I would like to know, what factor affects the delivery time the most? 
