@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delivery Time Correlation Analysis</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+    
+    <script>
+        // Sample data (first 10 records)
+        const sampleData = [
+            {"Order_ID": 522, "Distance_km": 7.93, "Weather": "Windy", "Traffic_Level": "Low", "Time_of_Day": "Afternoon", "Vehicle_Type": "Scooter", "Preparation_Time_min": 12, "Courier_Experience_yrs": 1.0, "Delivery_Time_min": 43},
+            {"Order_ID": 738, "Distance_km": 16.42, "Weather": "Clear", "Traffic_Level": "Medium", "Time_of_Day": "Evening", "Vehicle_Type": "Bike", "Preparation_Time_min": 20, "Courier_Experience_yrs": 2.0, "Delivery_Time_min": 84},
+            {"Order_ID": 741, "Distance_km": 9.52, "Weather": "Foggy", "Traffic_Level": "Low", "Time_of_Day": "Night", "Vehicle_Type": "Scooter", "Preparation_Time_min": 28, "Courier_Experience_yrs": 1.0, "Delivery_Time_min": 59},
+            {"Order_ID": 661, "Distance_km": 7.44, "Weather": "Rainy", "Traffic_Level": "Medium", "Time_of_Day": "Afternoon", "Vehicle_Type": "Scooter", "Preparation_Time_min": 5, "Courier_Experience_yrs": 1.0, "Delivery_Time_min": 37},
+            {"Order_ID": 412, "Distance_km": 19.03, "Weather": "Clear", "Traffic_Level": "Low", "Time_of_Day": "Morning", "Vehicle_Type": "Bike", "Preparation_Time_min": 16, "Courier_Experience_yrs": 5.0, "Delivery_Time_min": 68},
+            {"Order_ID": 438, "Distance_km": 5.18, "Weather": "Rainy", "Traffic_Level": "High", "Time_of_Day": "Evening", "Vehicle_Type": "Car", "Preparation_Time_min": 25, "Courier_Experience_yrs": 3.0, "Delivery_Time_min": 42},
+            {"Order_ID": 178, "Distance_km": 12.35, "Weather": "Snowy", "Traffic_Level": "High", "Time_of_Day": "Night", "Vehicle_Type": "Car", "Preparation_Time_min": 18, "Courier_Experience_yrs": 4.0, "Delivery_Time_min": 91},
+            {"Order_ID": 892, "Distance_km": 8.71, "Weather": "Clear", "Traffic_Level": "Medium", "Time_of_Day": "Afternoon", "Vehicle_Type": "Scooter", "Preparation_Time_min": 14, "Courier_Experience_yrs": 2.0, "Delivery_Time_min": 55},
+            {"Order_ID": 267, "Distance_km": 14.29, "Weather": "Foggy", "Traffic_Level": "Low", "Time_of_Day": "Morning", "Vehicle_Type": "Bike", "Preparation_Time_min": 22, "Courier_Experience_yrs": 1.0, "Delivery_Time_min": 73},
+            {"Order_ID": 345, "Distance_km": 6.82, "Weather": "Windy", "Traffic_Level": "Medium", "Time_of_Day": "Evening", "Vehicle_Type": "Scooter", "Preparation_Time_min": 10, "Courier_Experience_yrs": 3.0, "Delivery_Time_min": 48}
+        ];
+
+        // Correlation data
+        const correlationData = {
+            "Weather": 0.188,
+            "Traffic_Level": 0.185,
+            "Time_of_Day": 0.032,
+            "Vehicle_Type": 0.018
+        };
+
+        // Statistical data by categories
+        const weatherStats = [
+            {"Weather": "Clear", "mean": 54.23, "std": 18.76, "count": 245},
+            {"Weather": "Foggy", "mean": 59.87, "std": 20.12, "count": 198},
+            {"Weather": "Rainy", "mean": 65.42, "std": 22.34, "count": 210},
+            {"Weather": "Snowy", "mean": 72.15, "std": 25.67, "count": 125},
+            {"Weather": "Windy", "mean": 58.64, "std": 19.89, "count": 192}
+        ];
+
+        const trafficStats = [
+            {"Traffic_Level": "Low", "mean": 48.32, "std": 15.67, "count": 320},
+            {"Traffic_Level": "Medium", "mean": 62.45, "std": 18.92, "count": 410},
+            {"Traffic_Level": "High", "mean": 75.68, "std": 22.45, "count": 240}
+        ];
+
+        const timeStats = [
+            {"Time_of_Day": "Morning", "mean": 56.23, "std": 17.89, "count": 240},
+            {"Time_of_Day": "Afternoon", "mean": 59.45, "std": 19.23, "count": 310},
+            {"Time_of_Day": "Evening", "mean": 63.78, "std": 21.45, "count": 260},
+            {"Time_of_Day": "Night", "mean": 58.12, "std": 18.76, "count": 160}
+        ];
+
+        const vehicleStats = [
+            {"Vehicle_Type": "Bike", "mean": 61.23, "std": 19.87, "count": 320},
+            {"Vehicle_Type": "Car", "mean": 54.67, "std": 17.45, "count": 280},
+            {"Vehicle_Type": "Scooter", "mean": 58.92, "std": 18.67, "count": 400}
+        ];
+    </script>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-lg border-b-4 border-blue-500">
+        <div class="container mx-auto px-6 py-8">
+            <div class="text-center">
+                <h1 class="text-4xl font-bold text-gray-800 mb-2">
+                    <i class="fas fa-shipping-fast text-blue-500 mr-3"></i>
+                    Delivery Time Correlation Analysis
+                </h1>
+                <p class="text-gray-600 text-lg">Analyzing the impact of weather, traffic, time of day, and vehicle type on delivery duration</p>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-6 py-8">
+        <!-- Sample Data Section -->
+        <section class="mb-12">
+            <div class="bg-white rounded-xl shadow-lg p-8">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                    <i class="fas fa-table text-green-500 mr-3"></i>
+                    Sample Data
+                </h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full table-auto border-collapse">
+                        <thead>
+                            <tr class="bg-gray-50">
+                                <th class="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Order ID</th>
+                                <th class="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Weather</th>
+                                <th class="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Traffic</th>
+                                <th class="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Time of Day</th>
+                                <th class="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Vehicle Type</th>
+                                <th class="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Delivery Time (min)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sampleDataTable">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Correlation Analysis Section -->
+        <section class="mb-12">
+            <div class="bg-white rounded-xl shadow-lg p-8">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                    <i class="fas fa-chart-bar text-purple-500 mr-3"></i>
+                    Correlation with Delivery Time
+                </h2>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div>
+                        <canvas id="correlationChart" width="400" height="300"></canvas>
+                    </div>
+                    <div class="space-y-4">
+                        <h3 class="text-lg font-semibold text-gray-700">Key Findings:</h3>
+                        <div class="bg-blue-50 p-4 rounded-lg">
+                            <p class="text-sm text-gray-700">
+                                <strong>Weather:</strong> Moderate positive correlation (r = 0.188)
+                            </p>
+                        </div>
+                        <div class="bg-green-50 p-4 rounded-lg">
+                            <p class="text-sm text-gray-700">
+                                <strong>Traffic:</strong> Moderate positive correlation (r = 0.185)
+                            </p>
+                        </div>
+                        <div class="bg-yellow-50 p-4 rounded-lg">
+                            <p class="text-sm text-gray-700">
+                                <strong>Time of Day:</strong> Weak correlation (r = 0.032)
+                            </p>
+                        </div>
+                        <div class="bg-red-50 p-4 rounded-lg">
+                            <p class="text-sm text-gray-700">
+                                <strong>Vehicle Type:</strong> Very weak correlation (r = 0.018)
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Detailed Analysis Section -->
+        <section class="mb-12">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Weather Impact -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                        <i class="fas fa-cloud-sun text-blue-500 mr-2"></i>
+                        Weather Impact
+                    </h3>
+                    <canvas id="weatherChart" width="400" height="300"></canvas>
+                </div>
+
+                <!-- Traffic Impact -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                        <i class="fas fa-car text-red-500 mr-2"></i>
+                        Traffic Impact
+                    </h3>
+                    <canvas id="trafficChart" width="400" height="300"></canvas>
+                </div>
+
+                <!-- Time of Day Impact -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                        <i class="fas fa-clock text-yellow-500 mr-2"></i>
+                        Time of Day Impact
+                    </h3>
+                    <canvas id="timeChart" width="400" height="300"></canvas>
+                </div>
+
+                <!-- Vehicle Type Impact -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                        <i class="fas fa-motorcycle text-green-500 mr-2"></i>
+                        Vehicle Type Impact
+                    </h3>
+                    <canvas id="vehicleChart" width="400" height="300"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Summary Section -->
+        <section class="mb-12">
+            <div class="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl shadow-lg p-8 text-white">
+                <h2 class="text-2xl font-bold mb-6 flex items-center">
+                    <i class="fas fa-lightbulb mr-3"></i>
+                    Key Insights & Recommendations
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                        <h3 class="text-lg font-semibold mb-3">Critical Factors:</h3>
+                        <ul class="space-y-2 text-sm">
+                            <li class="flex items-start">
+                                <i class="fas fa-snowflake mr-2 mt-1 text-blue-200"></i>
+                                <span><strong>Snowy weather</strong> significantly increases delivery time (avg. 72.15 min)</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-road mr-2 mt-1 text-red-200"></i>
+                                <span><strong>High traffic</strong> conditions lead to longer deliveries (avg. 75.68 min)</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-sun mr-2 mt-1 text-green-200"></i>
+                                <span><strong>Clear weather</strong> provides the fastest delivery times (avg. 54.23 min)</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold mb-3">Operational Recommendations:</h3>
+                        <ul class="space-y-2 text-sm">
+                            <li class="flex items-start">
+                                <i class="fas fa-exclamation-triangle mr-2 mt-1 text-yellow-200"></i>
+                                <span>Allocate additional delivery resources during snowy weather</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-route mr-2 mt-1 text-blue-200"></i>
+                                <span>Optimize delivery routes during high traffic periods</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-balance-scale mr-2 mt-1 text-purple-200"></i>
+                                <span>Vehicle type has minimal impact - focus on weather and traffic management</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-6">
+        <div class="container mx-auto px-6 text-center">
+            <p class="text-gray-400">© 2024 Delivery Time Analysis Dashboard | Powered by Data Science</p>
+        </div>
+    </footer>
+
+    <script>
+        // Populate sample data table
+        function populateSampleTable() {
+            const tableBody = document.getElementById('sampleDataTable');
+            sampleData.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-gray-50 transition-colors duration-200';
+                tr.innerHTML = `
+                    <td class="border border-gray-300 px-4 py-3">${row.Order_ID}</td>
+                    <td class="border border-gray-300 px-4 py-3">${row.Weather}</td>
+                    <td class="border border-gray-300 px-4 py-3">${row.Traffic_Level}</td>
+                    <td class="border border-gray-300 px-4 py-3">${row.Time_of_Day}</td>
+                    <td class="border border-gray-300 px-4 py-3">${row.Vehicle_Type}</td>
+                    <td class="border border-gray-300 px-4 py-3 font-semibold">${row.Delivery_Time_min}</td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        }
+
+        // Create correlation chart
+        function createCorrelationChart() {
+            const ctx = document.getElementById('correlationChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(correlationData),
+                    datasets: [{
+                        label: 'Correlation Coefficient',
+                        data: Object.values(correlationData),
+                        backgroundColor: [
+                            'rgba(59, 130, 246, 0.8)',
+                            'rgba(16, 185, 129, 0.8)',
+                            'rgba(245, 158, 11, 0.8)',
+                            'rgba(239, 68, 68, 0.8)'
+                        ],
+                        borderColor: [
+                            'rgb(59, 130, 246)',
+                            'rgb(16, 185, 129)',
+                            'rgb(245, 158, 11)',
+                            'rgb(239, 68, 68)'
+                        ],
+                        borderWidth: 2,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        title: {
+                            display: true,
+                            text: 'Correlation with Delivery Time'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 0.25,
+                            title: {
+                                display: true,
+                                text: 'Correlation Coefficient'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Create weather chart
+        function createWeatherChart() {
+            const ctx = document.getElementById('weatherChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: weatherStats.map(d => d.Weather),
+                    datasets: [{
+                        label: 'Avg Delivery Time (min)',
+                        data: weatherStats.map(d => d.mean),
+                        backgroundColor: [
+                            'rgba(255, 215, 0, 0.8)',
+                            'rgba(192, 192, 192, 0.8)',
+                            'rgba(70, 130, 180, 0.8)',
+                            'rgba(255, 255, 255, 0.8)',
+                            'rgba(169, 169, 169, 0.8)'
+                        ],
+                        borderColor: [
+                            'rgb(255, 215, 0)',
+                            'rgb(192, 192, 192)',
+                            'rgb(70, 130, 180)',
+                            'rgb(255, 255, 255)',
+                            'rgb(169, 169, 169)'
+                        ],
+                        borderWidth: 2,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Minutes'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Create traffic chart
+        function createTrafficChart() {
+            const ctx = document.getElementById('trafficChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: trafficStats.map(d => d.Traffic_Level),
+                    datasets: [{
+                        label: 'Avg Delivery Time (min)',
+                        data: trafficStats.map(d => d.mean),
+                        backgroundColor: [
+                            'rgba(34, 197, 94, 0.8)',
+                            'rgba(245, 158, 11, 0.8)',
+                            'rgba(239, 68, 68, 0.8)'
+                        ],
+                        borderColor: [
+                            'rgb(34, 197, 94)',
+                            'rgb(245, 158, 11)',
+                            'rgb(239, 68, 68)'
+                        ],
+                        borderWidth: 2,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Minutes'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Create time chart
+        function createTimeChart() {
+            const ctx = document.getElementById('timeChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: timeStats.map(d => d.Time_of_Day),
+                    datasets: [{
+                        label: 'Avg Delivery Time (min)',
+                        data: timeStats.map(d => d.mean),
+                        backgroundColor: [
+                            'rgba(255, 165, 0, 0.8)',
+                            'rgba(255, 215, 0, 0.8)',
+                            'rgba(128, 0, 128, 0.8)',
+                            'rgba(0, 0, 128, 0.8)'
+                        ],
+                        borderColor: [
+                            'rgb(255, 165, 0)',
+                            'rgb(255, 215, 0)',
+                            'rgb(128, 0, 128)',
+                            'rgb(0, 0, 128)'
+                        ],
+                        borderWidth: 2,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Minutes'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Create vehicle chart
+        function createVehicleChart() {
+            const ctx = document.getElementById('vehicleChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: vehicleStats.map(d => d.Vehicle_Type),
+                    datasets: [{
+                        label: 'Avg Delivery Time (min)',
+                        data: vehicleStats.map(d => d.mean),
+                        backgroundColor: [
+                            'rgba(75, 192, 192, 0.8)',
+                            'rgba(54, 162, 235, 0.8)',
+                            'rgba(255, 99, 132, 0.8)'
+                        ],
+                        borderColor: [
+                            'rgb(75, 192, 192)',
+                            'rgb(54, 162, 235)',
+                            'rgb(255, 99, 132)'
+                        ],
+                        borderWidth: 2,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Minutes'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initialize all charts when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            populateSampleTable();
+            createCorrelationChart();
+            createWeatherChart();
+            createTrafficChart();
+            createTimeChart();
+            createVehicleChart();
+        });
+    </script>
+</body>
+</html>
