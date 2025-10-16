@@ -3,10 +3,12 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import plotly.figure_factory as ff
 from sklearn.preprocessing import LabelEncoder
 import os
 from sklearn.impute import KNNImputer
 import numpy as np
+import io
 
 # Set page config
 st.set_page_config(layout="wide", page_title="Food Delivery Analysis Dashboard")
@@ -36,7 +38,7 @@ def load_data(file_name):
 st.sidebar.header("Dataset Selection")
 dataset_choice = st.sidebar.radio(
     "Choose a dataset to analyze:",
-    ("Food Delivery Times", "NYC Food Orders")
+    ("Food Delivery Times", "NYC Food Orders", "Comparison of the 2")
 )
 
 # --- Main App Logic ---
@@ -70,12 +72,26 @@ if dataset_choice == "Food Delivery Times":
             st.subheader("Filtered Data Preview")
             st.dataframe(filtered_data.head())
 
+            st.subheader("Data Summary")
+            with st.expander("Data Info"):
+                buffer = io.StringIO()
+                filtered_data.info(buf=buffer)
+                st.text(buffer.getvalue())
+            with st.expander("Descriptive Statistics"):
+                st.dataframe(filtered_data.describe())
+
             # --- Visualizations ---
             st.subheader("Data Visualizations")
 
             # 1. Distribution of Delivery Time
             st.write("### Distribution of Delivery Time")
-            fig_delivery_time = px.histogram(filtered_data, x="Delivery_Time_min", nbins=30, title="Distribution of Delivery Time (min)")
+            
+            # Create a distribution plot with a KDE curve
+            hist_data = [filtered_data["Delivery_Time_min"].dropna()]
+            group_labels = ['Delivery Time'] # name of the dataset
+            
+            fig_delivery_time = ff.create_distplot(hist_data, group_labels, bin_size=1, show_rug=False)
+            fig_delivery_time.update_layout(title_text='Distribution of Delivery Time with KDE')
             st.plotly_chart(fig_delivery_time, use_container_width=True)
 
             # 2. Correlation Heatmap
@@ -110,30 +126,26 @@ if dataset_choice == "Food Delivery Times":
 
             # 4. Scatter Plots for Numerical Analysis
             st.write("### Numerical Feature Analysis")
-            col3, col4 = st.columns(2)
-
-            with col3:
-                # Scatter plot of Courier Experience vs. Delivery Time
-                fig_age_time = px.scatter(filtered_data, x="Courier_Experience_yrs", y="Delivery_Time_min",
-                                          title="Courier Experience (yrs) vs. Delivery Time",
-                                          trendline="ols")
-                st.plotly_chart(fig_age_time, use_container_width=True)
             
-            with col4:
-                # Scatter plot of Distance vs. Delivery Time
-                fig_ratings_time = px.scatter(filtered_data, x="Distance_km", y="Delivery_Time_min",
-                                              title="Distance (km) vs. Delivery Time",
-                                              trendline="ols")
-                # Add annotation for the line equation
-                fig_ratings_time.add_annotation(
-                    x=0.05, y=0.95,
-                    xref="paper", yref="paper",
-                    text="y = 3x + 26.3",
-                    showarrow=False,
-                    font=dict(size=14, color="black"),
-                    bgcolor="rgba(255, 255, 255, 0.5)"
-                )
-                st.plotly_chart(fig_ratings_time, use_container_width=True)
+            # Scatter plot of Distance vs. Delivery Time
+            fig_ratings_time = px.scatter(filtered_data, x="Distance_km", y="Delivery_Time_min",
+                                          title="Distance (km) vs. Delivery Time",
+                                          trendline="ols")
+            # Add annotation for the line equation
+            fig_ratings_time.add_annotation(
+                x=0.05, y=0.95,
+                xref="paper", yref="paper",
+                text="y = 3x + 26.3",
+                showarrow=False,
+                font=dict(size=14, color="black"),
+                bgcolor="rgba(255, 255, 255, 0.5)"
+            )
+            st.plotly_chart(fig_ratings_time, use_container_width=True)
+
+            st.markdown("""
+            ### Conclusion
+            From this dataset, we came to the conclusion that the only factor that affects the food delivery time is distance, which can roughly be calculated by the line y = 3x+26.3. This is based on cities that are not major metropolis. We will see if other factors play a role in determining delivery time in major metropolis like NYC in the next page.
+            """)
 
         else:
             st.warning("The 'Food Delivery Times' dataset is missing one or more required columns: 'Weather', 'Traffic_Level', 'Time_of_Day', 'Vehicle_Type'.")
@@ -148,9 +160,17 @@ elif dataset_choice == "NYC Food Orders":
         st.subheader("Data Preview")
         st.dataframe(nyc_data.head())
 
+        st.subheader("Data Summary")
+        with st.expander("Data Info"):
+            buffer = io.StringIO()
+            nyc_data.info(buf=buffer)
+            st.text(buffer.getvalue())
+        with st.expander("Descriptive Statistics"):
+            st.dataframe(nyc_data.describe())
+
         # --- Visualizations ---
         st.subheader("Data Visualizations")
-        fig_delivery_dist = px.histogram(nyc_data, x="delivery_time", nbins=30, title="Distribution of Delivery Time (min)")
+        fig_delivery_dist = px.histogram(nyc_data, x="delivery_time", nbins=20, title="Distribution of Delivery Time (min)")
         st.plotly_chart(fig_delivery_dist, use_container_width=True)
 
         # Pre-process data, dropping ID columns for correlation
@@ -226,6 +246,45 @@ elif dataset_choice == "NYC Food Orders":
                 post_imputation_corr = nyc_imputed_df.corr()
                 fig_after = px.imshow(post_imputation_corr, text_auto='.2f', aspect="auto", color_continuous_scale='RdBu', title="Correlation (After Imputation)")
                 st.plotly_chart(fig_after, use_container_width=True)
+
+elif dataset_choice == "Comparison of the 2":
+    st.header("Comparison of Delivery Times")
+
+    # Load both datasets
+    food_delivery_data = load_data("Food_Delivery_Times.csv")
+    nyc_data = load_data("NYC_food_order.csv")
+
+    if food_delivery_data is not None and nyc_data is not None:
+        # Create a figure for the box plots
+        fig = go.Figure()
+
+        # Add box plot for Food Delivery Times
+        fig.add_trace(go.Box(
+            y=food_delivery_data["Delivery_Time_min"],
+            name="Food Delivery Times",
+            marker_color='indianred'
+        ))
+
+        # Add box plot for NYC Food Orders
+        fig.add_trace(go.Box(
+            y=nyc_data["delivery_time"],
+            name="NYC Food Orders",
+            marker_color='lightseagreen'
+        ))
+
+        fig.update_layout(
+            title="Comparison of Delivery Times",
+            yaxis_title="Delivery Time (minutes)",
+            boxmode='group'
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+        st.markdown("""
+        From these boxplots, we can see that the delivery times in the Food Delivery Times dataset is significantly longer than in NYC. This is because the data collected in that dataset is mostly in non-major towns and cities, and therefore having significantly longer distance, and thus resulting in much longer delivery time
+        """)
+    else:
+        st.error("Could not load one or both datasets for comparison.")
 
 else:
     st.info("Please select a dataset from the sidebar to begin analysis.")
