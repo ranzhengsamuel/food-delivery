@@ -8,6 +8,8 @@ from sklearn.preprocessing import LabelEncoder
 import os
 from sklearn.impute import KNNImputer
 import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
 import io
 
 # Set page config
@@ -83,6 +85,12 @@ if dataset_choice == "Food Delivery Times":
             # --- Visualizations ---
             st.subheader("Data Visualizations")
 
+            # Missing Value Heatmap
+            st.write("### Missing Value Heatmap")
+            fig, ax = plt.subplots(figsize=(10, 4))
+            sns.heatmap(filtered_data.isnull().T, cbar=False, cmap='viridis', ax=ax)
+            st.pyplot(fig)
+
             # 1. Distribution of Delivery Time
             st.write("### Distribution of Delivery Time")
             
@@ -123,6 +131,44 @@ if dataset_choice == "Food Delivery Times":
                 # Delivery Time vs Vehicle Type
                 fig_vehicle_type = px.box(filtered_data, x="Vehicle_Type", y="Delivery_Time_min", title="Delivery Time vs. Vehicle Type")
                 st.plotly_chart(fig_vehicle_type, use_container_width=True)
+
+            # Pie charts of distance based on road traffic density and weather
+            st.subheader("Distance Category Analysis")
+            bins = [0, 5, 10, 15, float('inf')]
+            labels = ['0-5km', '5-10km', '10-15km', '15km+']
+            data['distance_category'] = pd.cut(data['Distance_km'], bins=bins, labels=labels, right=False)
+
+            col1, col2 = st.columns(2)
+
+            with col1:
+                st.write("#### By Road Traffic Density")
+                traffic_density_option = st.selectbox(
+                    'Select Road Traffic Density',
+                    data['Traffic_Level'].dropna().unique(),
+                    key='traffic_select'
+                )
+                filtered_by_traffic_pie = data[data['Traffic_Level'] == traffic_density_option]
+                fig_pie_traffic = px.pie(
+                    filtered_by_traffic_pie, 
+                    names='distance_category', 
+                    title=f'Distance Categories for {traffic_density_option} Traffic'
+                )
+                st.plotly_chart(fig_pie_traffic, use_container_width=True)
+
+            with col2:
+                st.write("#### By Weather Condition")
+                weather_condition_option = st.selectbox(
+                    'Select Weather Condition',
+                    data['Weather'].dropna().unique(),
+                    key='weather_select'
+                )
+                filtered_by_weather_pie = data[data['Weather'] == weather_condition_option]
+                fig_pie_weather = px.pie(
+                    filtered_by_weather_pie, 
+                    names='distance_category', 
+                    title=f'Distance Categories for {weather_condition_option} Weather'
+                )
+                st.plotly_chart(fig_pie_weather, use_container_width=True)
 
             # 4. Scatter Plots for Numerical Analysis
             st.write("### Numerical Feature Analysis")
@@ -170,17 +216,48 @@ elif dataset_choice == "NYC Food Orders":
 
         # --- Visualizations ---
         st.subheader("Data Visualizations")
+        
+        # Missing Value Heatmap
+        st.write("### Missing Value Heatmap")
+        fig, ax = plt.subplots(figsize=(10, 4))
+        sns.heatmap(nyc_data.isnull().T, cbar=False, cmap='viridis', ax=ax)
+        st.pyplot(fig)
+
         fig_delivery_dist = px.histogram(nyc_data, x="delivery_time", nbins=20, title="Distribution of Delivery Time (min)")
         st.plotly_chart(fig_delivery_dist, use_container_width=True)
 
         # Pre-process data, dropping ID columns for correlation
         nyc_numeric = nyc_data.select_dtypes(include=np.number).drop(columns=['order_id', 'customer_id'], errors='ignore')
         
+        st.subheader("Imputation Analysis")
+        st.write("### Correlation Before and After Imputation")
+        
+        col1, col2 = st.columns(2)
+
+        with col1:
+            st.write("#### Before KNN Imputation")
+            # Use the original numeric data with NaNs
+            pre_imputation_corr = nyc_numeric.corr()
+            fig_before = px.imshow(pre_imputation_corr, text_auto='.2f', aspect="auto", color_continuous_scale='RdBu', title="Correlation (Before Imputation)")
+            st.plotly_chart(fig_before, use_container_width=True)
+
+        with col2:
+            st.write("#### After KNN Imputation")
+            # Perform KNN Imputation
+            imputer = KNNImputer(n_neighbors=5)
+            nyc_imputed_array = imputer.fit_transform(nyc_numeric)
+            # Create a new dataframe with the imputed values
+            nyc_imputed_df = pd.DataFrame(nyc_imputed_array, columns=nyc_numeric.columns)
+            
+            post_imputation_corr = nyc_imputed_df.corr()
+            fig_after = px.imshow(post_imputation_corr, text_auto='.2f', aspect="auto", color_continuous_scale='RdBu', title="Correlation (After Imputation)")
+            st.plotly_chart(fig_after, use_container_width=True)
+
         st.subheader("Correlation Heatmap Analysis")
         st.write("Exploring correlations within the NYC Food Order dataset based on different segmentations.")
 
         # --- Tabs for different views ---
-        tab1, tab2, tab3, tab4 = st.tabs(["Overall Correlation", "Weekday vs. Weekend", "Cuisine Type", "Imputation Analysis"])
+        tab1, tab2, tab3 = st.tabs(["Overall Correlation", "Weekday vs. Weekend", "Cuisine Type"])
 
         with tab1:
             st.write("### Overall Numeric Correlation")
@@ -222,30 +299,6 @@ elif dataset_choice == "NYC Food Orders":
                 western_corr = western_df.corr()
                 fig_western = px.imshow(western_corr, text_auto='.2f', aspect="auto", color_continuous_scale='RdBu', title="Western Cuisine Correlation")
                 st.plotly_chart(fig_western, use_container_width=True)
-        
-        with tab4:
-            st.write("### Correlation Before and After Imputation")
-            
-            col1, col2 = st.columns(2)
-
-            with col1:
-                st.write("#### Before KNN Imputation")
-                # Use the original numeric data with NaNs
-                pre_imputation_corr = nyc_numeric.corr()
-                fig_before = px.imshow(pre_imputation_corr, text_auto='.2f', aspect="auto", color_continuous_scale='RdBu', title="Correlation (Before Imputation)")
-                st.plotly_chart(fig_before, use_container_width=True)
-
-            with col2:
-                st.write("#### After KNN Imputation")
-                # Perform KNN Imputation
-                imputer = KNNImputer(n_neighbors=5)
-                nyc_imputed_array = imputer.fit_transform(nyc_numeric)
-                # Create a new dataframe with the imputed values
-                nyc_imputed_df = pd.DataFrame(nyc_imputed_array, columns=nyc_numeric.columns)
-                
-                post_imputation_corr = nyc_imputed_df.corr()
-                fig_after = px.imshow(post_imputation_corr, text_auto='.2f', aspect="auto", color_continuous_scale='RdBu', title="Correlation (After Imputation)")
-                st.plotly_chart(fig_after, use_container_width=True)
 
 elif dataset_choice == "Comparison of the 2":
     st.header("Comparison of Delivery Times")
