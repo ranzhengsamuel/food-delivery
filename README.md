@@ -3,6 +3,7 @@
 This repository presents a data analytics and prediction project on food delivery times, using two real-world datasets:
 
 NYC_food_order.csv
+
 Food_Delivery_Times.csv
 
 The goal is to understand what really affects delivery time, from so many factors, pick the most influential factor that affects the delivery time and if possible, analyze on how much the influence is.
@@ -10,15 +11,20 @@ The goal is to understand what really affects delivery time, from so many factor
 The repository includes:
 
 Data preprocessing and cleaning scripts / notebooks
+
 Exploratory Data Analysis (EDA) with visualizations (e.g. correlation heatmaps)
+
 Model presentation and evaluation
+
 A Streamlit app to present predictions interactively
+
 A dashboard / interactive visualizations
 
 **Datasets**
 
 NYC_food_order.csv — contains records of food orders in New York City, with fields such as order timestamp, delivery location, etc.
-Food_Delivery_Times.csv — contains timestamps (order time, pick-up, delivery), distances, and possibly other features related to delivery process.
+
+Food_Delivery_Times.csv — did not specify the exact location where the data is collected, but believed to be non-major city that does not have traffic as busy as a major metropolis like NYC. contains timestamps (order time, pick-up, delivery), distances, and possibly other features related to delivery process.
 
 These datasets were selected because they are sufficiently large and rich to allow meaningful modeling. (As stated in the repo, the datasets “have a large dataset with enough entry, and the items are comprehensive.”)
 
