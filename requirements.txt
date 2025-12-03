@@ -4,3 +4,9 @@ plotly==5.24.1
 scikit-learn==1.6.1
 statsmodels
 seaborn
+streamlit
+pandas
+numpy
+plotly
+geopy
+matplotlib
