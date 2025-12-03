@@ -2,11 +2,13 @@ streamlit link: https://food-delivery-hpldksuoakkdmqmmrsfu33.streamlit.app/
 
 **Food Delivery Time Analysis & Prediction**
 
-This repository presents a data analytics and prediction project on food delivery times, using two real-world datasets:
+This repository presents a data analytics and prediction project on food delivery times, using 3 synthetic datasets from Kaggle:
 
 NYC_food_order.csv
 
 Food_Delivery_Times.csv
+
+India_Food_Delivery.csv
 
 The goal is to understand what really affects delivery time, from so many factors, pick the most influential factor that affects the delivery time and if possible, analyze on how much the influence is.
 
@@ -16,6 +18,10 @@ Data preprocessing and cleaning scripts / notebooks
 
 Exploratory Data Analysis (EDA) with visualizations (e.g. correlation heatmaps)
 
+Linear Regression Models Analysis
+
+Feature Engineering
+
 Model presentation and evaluation
 
 A Streamlit app to present predictions interactively
@@ -24,9 +30,11 @@ A dashboard / interactive visualizations
 
 **Datasets**
 
-NYC_food_order.csv — contains records of food orders in New York City, with fields such as order timestamp, delivery location, etc.
+NYC_food_order.csv — contains records of food orders in New York City, with fields such as order timestamp, delivery location, etc. about 1900 entries.
 
-Food_Delivery_Times.csv — did not specify the exact location where the data is collected, but believed to be non-major city that does not have traffic as busy as a major metropolis like NYC. contains timestamps (order time, pick-up, delivery), distances, and possibly other features related to delivery process.
+Food_Delivery_Times.csv — did not specify the exact location where the data is collected, but believed to be non-major city that does not have traffic as busy as a major metropolis like NYC. contains timestamps (order time, pick-up, delivery), distances, and possibly other features related to delivery process. about 1000 entries. 
+
+India_Food_Delivery.csv - data collected exclusively in India, the most complicated dataset so far with more than 44,000 entries. Most of my in-depth analysis is with this dataset, almost all of my end-of-semester project is with this dataset.
 
 These datasets were selected because they are sufficiently large and rich to allow meaningful modeling. (As stated in the repo, the datasets “have a large dataset with enough entry, and the items are comprehensive.”)
 
@@ -41,6 +49,8 @@ Standard cleaning steps such as:
 ~Type conversions (dates, numeric)
 
 ~Removing duplicates or erroneous rows
+
+~using absolute values for certain lanes to correct the erranous entry
 
 ~Factoring out the items that are not necesary to analyze (for example, customer ID and order ID)
 
@@ -57,7 +67,7 @@ From common sense perspective, it does seem that distance is a big indicator of 
 3. How do other factors (traffic, time of day, weather, courier experience) modulate delivery times?
 What level of correlation they have against traveling time?
 
-**Analysis & Key Findings**
+**Analysis & Key Findings From first 2 datasets (mid-term)**
 
 From the exploratory and modeling work, the following observations and conclusions emerged:
 
@@ -69,8 +79,31 @@ From the exploratory and modeling work, the following observations and conclusio
 
 ~ Implications: In operational settings, focusing on reducing distance (e.g. assigning orders to closer couriers, optimizing routing) may yield the most significant gains. Other interventions (traffic-aware routing, improved courier training) may yield incremental benefits.
 
+**Analysis & Key Findings From the last dataset (end-of-semester)**
+
+~ Distance is **NOT** the strongest predictor -- It is traffic condition that has the biggest impact
+
+~ Traffic Condition is not overwhelmingly the biggest factor as distance does in the first 2 datasets. Other factors also matters.
+
+~ Weather plays an important role, Sunny weather reduces 4-7 minutes to delivery time. 
+
+~ The combination effect of weather and distance is not that strong. Individual factors matter.
+
 **Conclusion**
 
-This project demonstrates that, at least for the datasets analyzed, distance plays an overwhelmingly dominant role in predicting food delivery time. While other factors (traffic congestion, time of day, courier experience, weather) might intuitively matter, their marginal explanatory power is limited in this context.
+This project demonstrates that, there are many factors that affect food delivery time. Such as: 
+Distance
+Traffic Condition
+Delivery Ratings
+Weather
 
-Hence, any practical system for estimating or optimizing delivery times should prioritize distance-based heuristics and routing logic. More sophisticated models that incorporate many additional features may yield diminishing returns, depending on the quality and resolution of the data.
+While other factors Such as:
+Restaurant Ratings
+Cost of Order
+Food Preparation Time
+Courier Experiences
+Vehicle Condition
+Vehicle Type
+might intuitively matter, their marginal explanatory power is limited in this context.
+
+More sophisticated models that incorporate many additional features may yield diminishing returns, depending on the quality and resolution of the data.
